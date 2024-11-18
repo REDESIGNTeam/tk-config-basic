@@ -1,0 +1,109 @@
+# This is a basic workflow template for config release
+
+name: "Make a Release"
+
+on:
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+    inputs:
+      body:
+        description: "Describe Release (type \\n for a new line)"
+        required: false
+        type: string
+        default: ""
+      client_deploy:
+        description: "Update Client site"
+        required: true
+        default: "dont_deploy"
+        type: string
+      client_project_name:
+        description: "Client Project Name"
+        type: string
+        required: true
+      user_initials:
+        description: "Specify initials for user"
+        required: true
+        type: string
+        default: ""
+      user_name:
+        description: "Specify username"
+        required: true
+        type: string
+        default: ""
+      run_identifier:
+        description: "Unique id to identify run"
+        type: string
+        required: false
+
+jobs:
+  run_identifier:
+    name: Workflow ID Provider
+    runs-on: ubuntu-latest
+    steps:
+      - name: ${{github.event.inputs.run_identifier}}
+        run: echo run id is ${{ inputs.run_identifier }}
+
+  Release:
+    runs-on: ubuntu-latest
+    name: Release
+    needs: run_identifier
+
+    outputs:
+      upload_url: ${{ steps.release_config.outputs.upload_url }}
+      tag_name: ${{ steps.release_config.outputs.tag_name }}
+      url: ${{ steps.release_config.outputs.url }}
+      release_id: ${{ steps.release_config.outputs.id }}
+      assets: ${{ steps.release_config.outputs.assets }}
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: REDESIGNTeam/actions
+          token: ${{ secrets.AA_GITHUB_ACCESS_TOKEN}}
+          path: actions
+          ref: main
+      - name: Release Config
+        id: release_config
+        uses: ./actions/config-release-action
+        with:
+          body: ${{ inputs.body }}
+          github_token: ${{ secrets.AA_GITHUB_ACCESS_TOKEN}}
+          user_initials: ${{ inputs.user_initials }}
+          user_name: ${{ inputs.user_name }}
+      - uses: actions/checkout@v3
+        with:
+          repository: REDESIGNTeam/actions
+          token: ${{ secrets.AA_GITHUB_ACCESS_TOKEN}}
+          path: actions
+          ref: main
+
+  # Second job
+  deploy:
+    name: Deploy
+
+    # This job is dependent on successful completion of `release` job
+    needs: release
+
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: REDESIGNTeam/actions
+          token: ${{ secrets.AA_GITHUB_ACCESS_TOKEN}}
+          path: actions
+          ref: main
+      - name: Update AA Dash
+        uses: ./actions/config-deploy-action
+        with:
+          body: ${{ inputs.body }}
+          github_token: ${{ secrets.AA_GITHUB_ACCESS_TOKEN }}
+          aa_dashboard: ${{ secrets.AA_DASHBOARD }}
+          tag_name: ${{ needs.release.outputs.tag_name }}
+          release_tag_url: ${{ needs.release.outputs.url }}
+          release_id: ${{ needs.release.outputs.release_id }}
+          client_deploy: ${{ inputs.client_deploy }}
+          client_project_name: ${{ inputs.client_project_name }}
+          user_name: ${{ inputs.user_name }}
