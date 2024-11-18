@@ -52,6 +52,20 @@ nuke.apps.tk-multi-loader2:
     Photoshop Image: [read_node]
     Rendered Image: [read_node]
     Texture: [read_node]
+    PDF: [read_node]
+    ccc: [read_node]
+    dnxhd: [read_node]
+    exr: [read_node]
+    hevc: [read_node]
+    matte: [read_node]
+    prores: [read_node]
+    jpg: [read_node]
+    zip: [read_node]
+    png: [read_node]
+    cc: [read_node]
+    collection: [read_node]
+    mov: [read_node]
+    ma: [read_node]
   actions_hook: '{self}/tk-nuke_actions.py'
   entities:
   - caption: Current Project
